@@ -1,2 +1,3 @@
-# personal-website
-Personal website highlighting my accomplishments and experiences.
+# Ram Suhrut's Personal-Website
+
+Here is my personal website, which highlights my accomplishments, experiences, and journey.
