@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Name — AI × Medicine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500;700;900&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#050b14;
+    --bg-panel: rgba(16,28,46,0.5);
+    --bg-panel-strong: rgba(16,28,46,0.72);
+    --teal:#2de1c2;
+    --violet:#9d6fff;
+    --magenta:#ff5fa2;
+    --text:#eef4fa;
+    --muted:#8fa3bf;
+    --line: rgba(143,163,191,0.18);
+    --disp: 'Unbounded', sans-serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg-deep);
+    color:var(--text);
+    font-family:var(--body);
+    overflow-x:hidden;
+    cursor:none;
+    line-height:1.5;
+  }
+  @media (pointer:coarse){ body{ cursor:auto; } }
+  ::selection{ background:var(--teal); color:#04141c; }
+
+  a{ color:inherit; text-decoration:none; }
+
+  /* ---------- Custom cursor ---------- */
+  #cursor{
+    position:fixed; top:0; left:0; width:22px; height:22px; border-radius:50%;
+    border:1px solid var(--teal); pointer-events:none; z-index:9999;
+    transform:translate(-50%,-50%); transition:width .25s,height .25s,border-color .25s,background .25s;
+    mix-blend-mode:screen;
+  }
+  #cursor.big{ width:56px; height:56px; background:rgba(45,225,194,0.12); border-color:var(--magenta); }
+  @media (pointer:coarse){ #cursor{ display:none; } }
+
+  /* ---------- Liquid background ---------- */
+  #liquid{
+    position:fixed; inset:0; z-index:0; overflow:hidden; filter:blur(70px) saturate(130%);
+  }
+  .blob{ position:absolute; border-radius:50%; mix-blend-mode:screen; opacity:.55; }
+  .blob.b1{ width:52vw; height:52vw; background:radial-gradient(circle at 30% 30%, var(--teal), transparent 65%);
+    top:-10%; left:-10%; animation:drift1 26s ease-in-out infinite; }
+  .blob.b2{ width:46vw; height:46vw; background:radial-gradient(circle at 60% 40%, var(--violet), transparent 65%);
+    top:30%; right:-15%; animation:drift2 32s ease-in-out infinite; }
+  .blob.b3{ width:40vw; height:40vw; background:radial-gradient(circle at 50% 50%, var(--magenta), transparent 65%);
+    bottom:-15%; left:20%; animation:drift3 22s ease-in-out infinite; }
+  @keyframes drift1{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(8vw,10vh) scale(1.15);} }
+  @keyframes drift2{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(-10vw,-6vh) scale(0.9);} }
+  @keyframes drift3{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(6vw,-8vh) scale(1.1);} }
+  @media (prefers-reduced-motion:reduce){ .blob{ animation:none !important; } }
+
+  #grain{ position:fixed; inset:0; z-index:1; opacity:.035; pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"); }
+
+  /* ---------- Pulse line (signature element) ---------- */
+  #pulse-wrap{
+    position:fixed; left:24px; top:0; height:100vh; width:60px; z-index:5; pointer-events:none;
+    display:flex; align-items:center;
+  }
+  #pulse-wrap svg{ width:100%; height:88vh; overflow:visible; }
+  #pulse-path{ fill:none; stroke:url(#pulseGrad); stroke-width:2; stroke-linecap:round; }
+  #pulse-dot{ fill:var(--teal); filter:drop-shadow(0 0 6px var(--teal)); }
+  @media (max-width:900px){ #pulse-wrap{ display:none; } }
+
+  /* ---------- Layout shells ---------- */
+  header, main, footer{ position:relative; z-index:2; }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 32px; }
+  @media (max-width:640px){ .wrap{ padding:0 20px; } }
+
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:22px 40px; backdrop-filter:blur(10px); background:rgba(5,11,20,0.35);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{ font-family:var(--mono); font-size:13px; letter-spacing:.12em; color:var(--muted); }
+  .brand b{ color:var(--text); }
+  .navlinks{ display:flex; gap:28px; font-family:var(--mono); font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; }
+  .navlinks a{ color:var(--muted); position:relative; padding-bottom:4px; }
+  .navlinks a:hover{ color:var(--teal); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  /* ---------- Hero ---------- */
+  #hero{ min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding-top:80px; }
+  .eyebrow{ font-family:var(--mono); font-size:13px; letter-spacing:.22em; color:var(--teal); text-transform:uppercase; margin-bottom:22px; display:flex; align-items:center; gap:10px; }
+  .eyebrow::before{ content:''; width:26px; height:1px; background:var(--teal); display:inline-block; }
+  h1.kinetic{
+    font-family:var(--disp); font-weight:700; font-size:clamp(2.6rem, 7vw, 5.6rem); line-height:1.02; letter-spacing:-.01em;
+  }
+  h1.kinetic span{ display:inline-block; will-change:transform; }
+  .grad-text{ background:linear-gradient(100deg, var(--teal), var(--violet) 55%, var(--magenta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .hero-sub{ margin-top:28px; max-width:560px; font-size:1.08rem; color:var(--muted); font-weight:300; }
+  .hero-sub b{ color:var(--text); font-weight:500; }
+  .scroll-cue{ margin-top:70px; font-family:var(--mono); font-size:11.5px; letter-spacing:.15em; color:var(--muted); display:flex; align-items:center; gap:10px; text-transform:uppercase; }
+  .scroll-cue .line{ width:1px; height:34px; background:linear-gradient(var(--teal), transparent); animation:pulseline 2s ease-in-out infinite; }
+  @keyframes pulseline{ 0%,100%{ opacity:.3;} 50%{ opacity:1;} }
+
+  /* ---------- Section shell ---------- */
+  section{ padding:150px 0; position:relative; }
+  .section-head{ margin-bottom:56px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; letter-spacing:.18em; color:var(--muted); text-transform:uppercase; }
+  h2{ font-family:var(--disp); font-weight:500; font-size:clamp(1.9rem,4vw,3rem); margin-top:12px; letter-spacing:-.01em; }
+
+  /* organic divider between sections */
+  .wave-divider{ display:block; width:100%; height:90px; margin-top:-1px; }
+
+  /* ---------- Glass panel ---------- */
+  .glass{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:28px;
+    backdrop-filter:blur(18px) saturate(140%); -webkit-backdrop-filter:blur(18px) saturate(140%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset, 0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+
+  /* ---------- About / Signal ---------- */
+  #signal .grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:40px; align-items:stretch; }
+  @media (max-width:860px){ #signal .grid{ grid-template-columns:1fr; } }
+  .bio-panel{ padding:44px; }
+  .bio-panel p{ color:var(--muted); font-weight:300; font-size:1.02rem; margin-top:16px; }
+  .bio-panel p:first-of-type{ margin-top:0; }
+  .bio-panel b{ color:var(--text); font-weight:500; }
+
+  .vitals{ padding:36px; display:flex; flex-direction:column; gap:22px; justify-content:center; }
+  .vital-row{ display:flex; justify-content:space-between; align-items:baseline; padding-bottom:16px; border-bottom:1px solid var(--line); }
+  .vital-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .vital-label{ font-family:var(--mono); font-size:11.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+  .vital-value{ font-family:var(--mono); font-size:15px; color:var(--teal); }
+
+  /* ---------- Focus cards ---------- */
+  .cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; }
+  @media (max-width:860px){ .cards{ grid-template-columns:1fr; } }
+  .card{
+    position:relative; padding:36px 30px; overflow:hidden; cursor:none;
+    transition:transform .4s cubic-bezier(.2,.8,.2,1), border-color .4s;
+  }
+  .card:hover{ transform:translateY(-6px); border-color:rgba(45,225,194,0.4); }
+  .card::before{
+    content:''; position:absolute; inset:0; opacity:0; transition:opacity .4s;
+    background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(45,225,194,0.16), transparent 60%);
+  }
+  .card:hover::before{ opacity:1; }
+  .card-num{ font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:.1em; }
+  .card h3{ font-family:var(--disp); font-weight:500; font-size:1.32rem; margin:18px 0 12px; }
+  .card p{ color:var(--muted); font-size:.96rem; font-weight:300; }
+
+  /* ---------- Helix / Vision ---------- */
+  #vision .grid{ display:grid; grid-template-columns:.85fr 1.15fr; gap:60px; align-items:center; }
+  @media (max-width:860px){ #vision .grid{ grid-template-columns:1fr; } }
+  .helix-stage{ perspective:900px; height:380px; display:flex; align-items:center; justify-content:center; }
+  .helix{ position:relative; width:120px; height:280px; transform-style:preserve-3d; }
+  .bp{ position:absolute; top:50%; left:50%; width:100px; height:2px; margin-left:-50px; transform-style:preserve-3d; }
+  .bp span{ position:absolute; width:9px; height:9px; border-radius:50%; top:-3.5px; }
+  .bp span.a{ left:0; background:var(--teal); box-shadow:0 0 8px var(--teal); }
+  .bp span.b{ right:0; background:var(--magenta); box-shadow:0 0 8px var(--magenta); }
+  .bp i{ position:absolute; left:0; right:0; top:0; height:1px; background:linear-gradient(90deg,var(--teal),var(--magenta)); opacity:.5; }
+  .helix-caption{ text-align:center; font-family:var(--mono); font-size:11px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; margin-top:18px; }
+
+  .quote{ font-family:var(--disp); font-weight:300; font-size:clamp(1.5rem,3.4vw,2.3rem); line-height:1.35; }
+  .quote .grad-text{ font-weight:500; }
+  .quote-attr{ margin-top:24px; font-family:var(--mono); font-size:12.5px; color:var(--muted); letter-spacing:.1em; }
+
+  /* ---------- Contact ---------- */
+  #contact{ text-align:center; }
+  #contact h2{ margin-top:12px; }
+  #contact .lead{ max-width:520px; margin:22px auto 44px; color:var(--muted); font-weight:300; }
+  .cta-row{ display:flex; gap:20px; justify-content:center; flex-wrap:wrap; }
+  .magnetic{
+    position:relative; display:inline-flex; align-items:center; gap:10px; padding:16px 30px; border-radius:100px;
+    font-family:var(--mono); font-size:13px; letter-spacing:.08em; text-transform:uppercase; cursor:none;
+    border:1px solid var(--line); transition:border-color .3s, background .3s;
+  }
+  .magnetic.primary{ background:linear-gradient(100deg, var(--teal), var(--violet)); color:#04141c; font-weight:500; border:none; }
+  .magnetic.ghost:hover{ border-color:var(--teal); color:var(--teal); }
+
+  footer{ padding:50px 0 40px; text-align:center; font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.08em; }
+
+  .reveal{ opacity:0; transform:translateY(34px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  @media (prefers-reduced-motion:reduce){
+    html{ scroll-behavior:auto; }
+    .reveal{ transition:none; opacity:1; transform:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="liquid"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div id="grain"></div>
+
+<div id="pulse-wrap">
+  <svg viewBox="0 0 60 900" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="pulseGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2de1c2"/>
+        <stop offset="50%" stop-color="#9d6fff"/>
+        <stop offset="100%" stop-color="#ff5fa2"/>
+      </linearGradient>
+    </defs>
+    <path id="pulse-path" d="M30,0 C30,60 10,80 30,120 C50,150 10,150 5,170 L20,170 L30,140 L40,200 L50,170 L58,170
+      C55,190 30,210 30,260 C30,320 10,340 30,380 C50,410 10,410 5,430 L20,430 L30,400 L40,460 L50,430 L58,430
+      C55,450 30,470 30,520 C30,580 10,600 30,640 C50,670 10,670 5,690 L20,690 L30,660 L40,720 L50,690 L58,690
+      C55,710 30,730 30,780 C30,830 30,850 30,900"/>
+    <circle id="pulse-dot" cx="30" cy="0" r="4.5"/>
+  </svg>
+</div>
+
+<nav>
+  <div class="brand">&#9679; <b>YOUR NAME</b> / AI &times; MEDICINE</div>
+  <div class="navlinks">
+    <a href="#hero">Pulse</a>
+    <a href="#signal">Signal</a>
+    <a href="#focus">Focus</a>
+    <a href="#vision">Vision</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<main>
+
+  <section id="hero" class="wrap">
+    <div class="eyebrow">AI × Healthcare — pre-med / builder</div>
+    <h1 class="kinetic" id="heroHeadline">Building the <span class="grad-text">bridge</span><br>between algorithms<br>and bedside care.</h1>
+    <p class="hero-sub">I'm <b>Your Name</b> — an aspiring physician learning to read patients and data with the same attention, so that the tools I help build make people feel more cared for, not less.</p>
+    <div class="scroll-cue"><div class="line"></div>Scroll to find the pulse</div>
+  </section>
+
+  <section id="signal" class="wrap reveal">
+    <div class="section-head">
+      <div class="tag">01 — Signal</div>
+      <h2>What I'm listening for</h2>
+    </div>
+    <div class="grid">
+      <div class="glass bio-panel">
+        <p>I split my time between hospital hallways and research notebooks — shadowing physicians in the morning, then spending the evening asking whether a model could have caught what took a clinician years of pattern recognition to see.</p>
+        <p>I don't think AI belongs at the center of medicine. I think it belongs <b>just behind the doctor's shoulder</b> — quiet, fast, and only speaking up when it has something worth saying.</p>
+        <p>This site is where I keep the throughline between the two: the pulse that runs from a line of code to a patient's chart.</p>
+      </div>
+      <div class="glass vitals">
+        <div class="vital-row"><span class="vital-label">Focus</span><span class="vital-value">AI + Clinical Care</span></div>
+        <div class="vital-row"><span class="vital-label">Currently</span><span class="vital-value">Pre-med / Research</span></div>
+        <div class="vital-row"><span class="vital-label">Curiosity</span><span class="vital-value">Continuous</span></div>
+        <div class="vital-row"><span class="vital-label">Bedside manner</span><span class="vital-value">In training</span></div>
+        <div class="vital-row"><span class="vital-label">Status</span><span class="vital-value">&#9679; Listening</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="focus" class="wrap reveal">
+    <div class="section-head">
+      <div class="tag">02 — Focus</div>
+      <h2>Three places I want AI to show up in medicine</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-num">01 / Diagnostics</div>
+        <h3>Notice what's easy to miss</h3>
+        <p>Second-reader systems that flag the faint signal in an image or chart — not to replace a clinician's eye, but to make sure it never has an off day.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">02 / Human-centered care</div>
+        <h3>Give time back to the room</h3>
+        <p>Ambient tools that handle the notes and the admin, so the physician can actually look at the patient instead of the screen between them.</p>
+      </div>
+      <div class="card">
+        <div class="card-num">03 / Predictive medicine</div>
+        <h3>Catch the quiet years</h3>
+        <p>Models that notice risk building up long before symptoms do, turning medicine from reactive to preventive.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="vision" class="wrap reveal">
+    <div class="section-head">
+      <div class="tag">03 — Vision</div>
+      <h2>Two strands, one structure</h2>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="helix-stage"><div class="helix" id="helix"></div></div>
+        <div class="helix-caption">Drag to rotate — data &amp; care, wound together</div>
+      </div>
+      <div class="quote">
+        Medicine's next great instrument won't replace the doctor's hand —
+        <span class="grad-text">it will steady it.</span>
+        <div class="quote-attr">— a working thesis, still being tested</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="wrap reveal">
+    <div class="tag">04 — Contact</div>
+    <h2>Let's compare notes.</h2>
+    <p class="lead">Med students, engineers, and anyone building at the edge of AI and care — I'd like to hear what you're working on.</p>
+    <div class="cta-row">
+      <a class="magnetic primary" href="mailto:hello@yourname.com">Send an email</a>
+      <a class="magnetic ghost" href="#" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="magnetic ghost" href="#" target="_blank" rel="noopener">Research / CV</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>YOUR NAME — AI × MEDICINE &nbsp;/&nbsp; BUILT WITH CARE, {new year placeholder}</footer>
+
+<script>
+// ---------- Custom cursor ----------
+const cursor = document.getElementById('cursor');
+window.addEventListener('mousemove', e=>{
+  cursor.style.left = e.clientX+'px';
+  cursor.style.top = e.clientY+'px';
+});
+document.querySelectorAll('a, .card, .magnetic').forEach(el=>{
+  el.addEventListener('mouseenter', ()=>cursor.classList.add('big'));
+  el.addEventListener('mouseleave', ()=>cursor.classList.remove('big'));
+});
+
+// ---------- Reveal on scroll ----------
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); } });
+},{ threshold:0.15 });
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+// ---------- Pulse line follows scroll ----------
+const path = document.getElementById('pulse-path');
+const dot = document.getElementById('pulse-dot');
+const pathLen = path.getTotalLength();
+path.style.strokeDasharray = pathLen;
+function updatePulse(){
+  const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = scrollable>0 ? Math.min(window.scrollY/scrollable,1) : 0;
+  path.style.strokeDashoffset = pathLen - (pathLen*pct);
+  const pt = path.getPointAtLength(pathLen*pct);
+  dot.setAttribute('cx', pt.x); dot.setAttribute('cy', pt.y);
+}
+updatePulse();
+window.addEventListener('scroll', ()=>requestAnimationFrame(updatePulse));
+window.addEventListener('resize', updatePulse);
+
+// ---------- Kinetic hero type ----------
+const headline = document.getElementById('heroHeadline');
+function wrapWords(el){
+  el.innerHTML = el.innerHTML.split(/(<br>)/).map(chunk=>{
+    if(chunk==='<br>') return chunk;
+    return chunk.split(' ').map(w=>`<span>${w}&nbsp;</span>`).join('');
+  }).join('');
+}
+wrapWords(headline);
+const words = headline.querySelectorAll('span');
+function updateKinetic(){
+  const y = window.scrollY;
+  words.forEach((w,i)=>{
+    const depth = (i%5)+1;
+    w.style.transform = `translateY(${y*0.06*depth/5}px)`;
+    w.style.opacity = Math.max(1 - y/700, 0);
+  });
+}
+window.addEventListener('scroll', ()=>requestAnimationFrame(updateKinetic));
+
+// ---------- Card ripple ----------
+document.querySelectorAll('.card').forEach(card=>{
+  card.addEventListener('mousemove', e=>{
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX-r.left)+'px');
+    card.style.setProperty('--my', (e.clientY-r.top)+'px');
+  });
+});
+
+// ---------- Magnetic buttons ----------
+document.querySelectorAll('.magnetic').forEach(btn=>{
+  btn.addEventListener('mousemove', e=>{
+    const r = btn.getBoundingClientRect();
+    const mx = (e.clientX - r.left - r.width/2)*0.25;
+    const my = (e.clientY - r.top - r.height/2)*0.4;
+    btn.style.transform = `translate(${mx}px, ${my}px)`;
+  });
+  btn.addEventListener('mouseleave', ()=>{ btn.style.transform=''; });
+});
+
+// ---------- DNA helix ----------
+const helix = document.getElementById('helix');
+const N = 14;
+for(let i=0;i<N;i++){
+  const bp = document.createElement('div');
+  bp.className = 'bp';
+  bp.style.top = (i*(280/N))+'px';
+  bp.dataset.i = i;
+  bp.innerHTML = '<i></i><span class="a"></span><span class="b"></span>';
+  helix.appendChild(bp);
+}
+const bps = helix.querySelectorAll('.bp');
+let rotY = 20, targetRot = 20, autoSpin = true, dragging = false, lastX = 0;
+
+function layoutHelix(){
+  bps.forEach(bp=>{
+    const i = +bp.dataset.i;
+    const angle = (i/N)*Math.PI*2 + rotY*Math.PI/180;
+    bp.style.transform = `rotateY(${angle}rad)`;
+  });
+}
+function animateHelix(){
+  if(autoSpin && !dragging){ rotY += 0.25; }
+  layoutHelix();
+  requestAnimationFrame(animateHelix);
+}
+animateHelix();
+
+helix.addEventListener('pointerdown', e=>{ dragging=true; lastX=e.clientX; helix.setPointerCapture(e.pointerId); });
+helix.addEventListener('pointermove', e=>{
+  if(!dragging) return;
+  const dx = e.clientX - lastX; lastX = e.clientX;
+  rotY += dx*0.6;
+});
+window.addEventListener('pointerup', ()=>dragging=false);
+
+// respect reduced motion
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  autoSpin = false;
+}
+
+document.querySelector('footer').innerHTML = document.querySelector('footer').innerHTML.replace('{new year placeholder}', new Date().getFullYear());
+</script>
+
+</body>
+</html>
